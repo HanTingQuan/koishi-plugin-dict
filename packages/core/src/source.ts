@@ -10,7 +10,7 @@ export abstract class DictSource {
   async availables(): Promise<string[]> { return [] }
 
   // eslint-disable-next-line unused-imports/no-unused-vars
-  async lookup(key: string): Promise<string[] | void> {}
+  async lookup(key: string): Promise<string[]> { return [] }
 
   async find(values: string[], founds: Record<string, string[]>) {
     for (const key of await this.availables()) {
