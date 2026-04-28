@@ -1,7 +1,15 @@
 import type { Context } from 'koishi'
-import type { Config } from '.'
+import { Random, Schema } from 'koishi'
 
 export const inject = ['dict']
+
+export interface Config {
+  delimiter: string
+}
+
+export const Config = Schema.object({
+  delimiter: Schema.string().default(' ').description('默认字段分隔符。'),
+})
 
 export function apply(ctx: Context, config: Config) {
   ctx.command('look <key:string>', '查询词典所有结果。')
@@ -22,4 +30,12 @@ export function apply(ctx: Context, config: Config) {
         .map(([key, values]) => `${key}: ${values.join(delimiter)}`)
         .join('\n')
     })
+
+  function resolve(content: string) {
+    return content.replaceAll(/%\(([^()]*)\)/g, (raw, key) =>
+      Random.pick(ctx.dict.lookupSync(key) || [raw]))
+  }
+
+  ctx.middleware((session, next) =>
+    next(() => session.content && resolve(session.content)), true)
 }

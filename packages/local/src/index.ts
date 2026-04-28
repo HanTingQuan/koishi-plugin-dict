@@ -99,10 +99,6 @@ class LocalDictSource extends DictSource {
 
     return []
   }
-
-  async lookup(key: string) {
-    return this.lookupSync(key)
-  }
 }
 
 namespace LocalDictSource {

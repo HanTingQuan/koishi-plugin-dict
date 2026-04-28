@@ -1,5 +1,5 @@
 import type { DictSource } from './source'
-import { Context, remove, Schema, Service } from 'koishi'
+import { Context, remove, Service } from 'koishi'
 import * as Command from './command'
 
 export * from './source'
@@ -13,7 +13,7 @@ declare module 'koishi' {
 class DictService extends Service {
   private sources: DictSource[] = []
 
-  constructor(ctx: Context, config: Config) {
+  constructor(ctx: Context, config: Command.Config) {
     super(ctx, 'dict', true)
     this.config = config
   }
@@ -38,6 +38,14 @@ class DictService extends Service {
     }
   }
 
+  lookupSync(key: string) {
+    for (const source of this.sources) {
+      const result = source.lookupSync(key)
+      if (result?.length)
+        return result
+    }
+  }
+
   async find(...values: string[]): Promise<Record<string, string[]>> {
     const founds = Object.fromEntries(values.map(value => [value, []]))
     for (const source of this.sources) {
@@ -47,15 +55,7 @@ class DictService extends Service {
   }
 }
 
-export interface Config {
-  delimiter: string
-}
-
-export const Config = Schema.object({
-  delimiter: Schema.string().default(' ').description('默认字段分隔符。'),
-})
-
-export function apply(ctx: Context, config: Config) {
+export function apply(ctx: Context, config: Command.Config) {
   ctx.plugin(DictService, config)
   ctx.plugin(Command, config)
 }
