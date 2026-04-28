@@ -42,7 +42,7 @@ class LocalDictSource extends DictSource {
           }
         }
       })
-      .then(() => logger.info('loaded all dicts.'))
+      .then(() => logger.info(`loaded ${this.dicts.size} dicts.`))
   }
 
   dicts: Map<string, string[]> = new Map()
