@@ -25,6 +25,11 @@ class DictService extends Service {
     })
   }
 
+  availables() {
+    return Promise.all(this.sources.map(source => source.availables()))
+      .then(results => results.flat())
+  }
+
   async lookup(key: string) {
     for (const source of this.sources) {
       const result = await source.lookup(key)
@@ -33,7 +38,7 @@ class DictService extends Service {
     }
   }
 
-  async find(...values: string[]) {
+  async find(...values: string[]): Promise<Record<string, string[]>> {
     const founds = Object.fromEntries(values.map(value => [value, []]))
     for (const source of this.sources) {
       await source.find(values, founds)

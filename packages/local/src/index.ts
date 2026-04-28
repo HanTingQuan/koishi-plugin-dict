@@ -1,6 +1,7 @@
 import type { Context, Dict } from 'koishi'
 import { opendir, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { parse } from 'csv-parse'
 import { Logger, Schema } from 'koishi'
 import { DictSource } from 'koishi-plugin-dict'
 
@@ -25,6 +26,20 @@ class LocalDictSource extends DictSource {
             const data = JSON.parse(content)
             this.tryLoadDict(key, data)
           }
+          else if (entry.name.endsWith('.csv')) {
+            const content = await readFile(resolve(entry.parentPath, entry.name), 'utf-8')
+            const typeToNames: Record<string, string[]> = {}
+            const parser = parse(content, { columns: true })
+            parser.on('data', ({ name, type }) => {
+              if (type)
+                (typeToNames[type] ||= []).push(name)
+            })
+
+            parser.on('end', () => {
+              for (const type in typeToNames)
+                this.loadDict(type, typeToNames[type])
+            })
+          }
         }
       })
       .then(() => logger.info('loaded all dicts.'))
@@ -32,6 +47,10 @@ class LocalDictSource extends DictSource {
 
   dicts: Map<string, string[]> = new Map()
   aliases: Map<string, string[]> = new Map()
+
+  availables(): Promise<string[]> {
+    return Promise.resolve(Array.from(this.dicts.keys()))
+  }
 
   tryLoadDict(key: string, data: any, depth = 0) {
     if (typeof data === 'string') {

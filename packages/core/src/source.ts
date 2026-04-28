@@ -17,7 +17,7 @@ export abstract class DictSource {
       const result = await this.lookup(key) || []
       for (const value of values) {
         if (result.includes(value))
-          founds[key].push(value)
+          (founds[key] ||= []).push(value)
       }
     }
   }
