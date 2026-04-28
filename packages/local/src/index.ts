@@ -18,7 +18,7 @@ class LocalDictSource extends DictSource {
 
           if (entry.name.endsWith('.txt')) {
             const content = await readFile(resolve(entry.parentPath, entry.name), 'utf-8')
-            this.tryLoadDict(entry.name.replace(/\.txt$/, ''), content.trim())
+            this.tryLoadDict(entry.name.replace(/\.txt$/, ''), content.replaceAll('\r\n', '\n').trim())
           }
           else if (entry.name.endsWith('.json')) {
             const content = await readFile(resolve(entry.parentPath, entry.name), 'utf-8')
