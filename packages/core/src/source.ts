@@ -1,5 +1,10 @@
 import type { Context } from 'koishi'
 
+export interface Found {
+  key: string
+  weak: boolean
+}
+
 export abstract class DictSource {
   static inject = ['dict']
 
@@ -14,12 +19,15 @@ export abstract class DictSource {
 
   async lookup(key: string): Promise<string[]> { return this.lookupSync(key) }
 
-  async find(values: string[], founds: Record<string, string[]>) {
+  async find(values: string[], founds: Record<string, Found[]>) {
     for (const key of await this.availables()) {
       const result = await this.lookup(key) || []
+      const collected = result.join(' ')
       for (const value of values) {
         if (result.includes(value))
-          (founds[key] ||= []).push(value)
+          (founds[value] ||= []).push({ key, weak: false })
+        else if (collected.includes(value))
+          (founds[value] ||= []).push({ key, weak: true })
       }
     }
   }
