@@ -31,19 +31,7 @@ class DictService extends Service {
   }
 
   async lookup(key: string) {
-    for (const source of this.sources) {
-      const result = await source.lookup(key)
-      if (result?.length)
-        return result
-    }
-  }
-
-  lookupSync(key: string) {
-    for (const source of this.sources) {
-      const result = source.lookupSync(key)
-      if (result?.length)
-        return result
-    }
+    return Promise.race(this.sources.map(source => source.lookup(key)))
   }
 
   async find(...values: string[]): Promise<Record<string, Found[]>> {
