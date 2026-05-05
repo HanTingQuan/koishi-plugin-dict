@@ -1,7 +1,7 @@
 import type { Context } from 'koishi'
 
 export interface Found {
-  key: string
+  name: string
   weak: boolean
 }
 
@@ -12,22 +12,26 @@ export abstract class DictSource {
     this.ctx.dict.register(this)
   }
 
-  async availables(): Promise<string[]> { return [] }
+  availablesSync(): string[] { return [] }
+  async availables(): Promise<string[]> {
+    return this.availablesSync()
+  }
 
   // eslint-disable-next-line unused-imports/no-unused-vars
-  lookupSync(key: string): string[] { return [] }
-
-  async lookup(key: string): Promise<string[]> { return this.lookupSync(key) }
+  lookupSync(name: string): string[] { return [] }
+  async lookup(name: string): Promise<string[]> {
+    return this.lookupSync(name)
+  }
 
   async find(values: string[], founds: Record<string, Found[]>) {
-    for (const key of await this.availables()) {
-      const result = await this.lookup(key) || []
+    for (const name of await this.availables()) {
+      const result = await this.lookup(name) || []
       const collected = result.join(' ')
       for (const value of values) {
         if (result.includes(value))
-          (founds[value] ||= []).push({ key, weak: false })
+          (founds[value] ||= []).push({ name, weak: false })
         else if (collected.includes(value))
-          (founds[value] ||= []).push({ key, weak: true })
+          (founds[value] ||= []).push({ name, weak: true })
       }
     }
   }

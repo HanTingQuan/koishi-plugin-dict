@@ -30,6 +30,12 @@ export function apply(ctx: Context, config: Config) {
         .map((joined, index) => options?.long ? `${key[index]}: ${joined}` : joined)
         .join('\n')
     })
+    .subcommand('.list', '列出所有词典。')
+    .option('delimiter', '-d <delim:string> 分隔符。')
+    .action(async ({ options }) => {
+      const delimiter = options?.delimiter || config.delimiter
+      return markdown((await ctx.dict.availables()).join(delimiter))
+    })
 
   ctx.command('find <values...:string>', '查找查询字符串的词典。')
     .option('delimiter', '-d <delim:string> 分隔符。')
@@ -39,8 +45,8 @@ export function apply(ctx: Context, config: Config) {
         .map(([key, founds]) => `${key}: ${founds
           .sort((a, b) => +a.weak - +b.weak)
           .map(found => found.weak
-            ? config.markdown ? `*${found.key}*` : `(${found.key})`
-            : found.key,
+            ? config.markdown ? `*${found.name}*` : `(${found.name})`
+            : found.name,
           )
           .join(delimiter)}`)
         .join('\n'))
