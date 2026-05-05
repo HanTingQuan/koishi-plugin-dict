@@ -15,25 +15,31 @@ class LocalDictSource extends DictSource {
         for await (const entry of entries) {
           if (!entry.isFile() || entry.name.startsWith('~'))
             continue
+          const fullPath = resolve(entry.parentPath, entry.name)
 
           if (entry.name.endsWith('.txt')) {
-            const content = await readFile(resolve(entry.parentPath, entry.name), 'utf-8')
-            this.tryLoadDict(entry.name.replace(/\.txt$/, ''), content.replaceAll('\r\n', '\n').trim())
+            const name = entry.name.replace(/\.txt$/, '')
+            const content = await readFile(fullPath, 'utf-8')
+            this.loadDict(name, content
+              .replaceAll('\r\n', '\n')
+              .split('\n')
+              .map(line => line.trim())
+              .filter(Boolean))
           }
           else if (entry.name.endsWith('.json')) {
-            const content = await readFile(resolve(entry.parentPath, entry.name), 'utf-8')
-            this.tryLoadDict(entry.name.replace(/\.json$/, ''), JSON.parse(content))
+            const name = entry.name.replace(/\.json$/, '')
+            const content = await readFile(fullPath, 'utf-8')
+            this.tryLoadDict(name, JSON.parse(content))
           }
           else if (entry.name.endsWith('.csv')) {
-            const content = await readFile(resolve(entry.parentPath, entry.name), 'utf-8')
             const name = entry.name.replace(/\.csv$/, '')
-            const typeToNames: Record<string, string[]> = {}
+            const content = await readFile(fullPath, 'utf-8')
             const parser = parse(content, { columns: true })
+            const typeToNames: Record<string, string[]> = {}
             parser.on('data', ({ name, type }) => {
-              if (type)
+              if (type && name)
                 (typeToNames[type] ||= []).push(name)
             })
-
             parser.on('end', () => {
               for (const type in typeToNames)
                 this.loadDict(`${name}/${type}`, typeToNames[type])
