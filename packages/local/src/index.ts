@@ -50,7 +50,7 @@ class LocalDictSource extends DictSource {
       .then(() => logger.info(`loaded ${this.dicts.size} dicts.`))
   }
 
-  dicts: Map<string, { source: string, entries: string[] }> = new Map()
+  dicts: Map<string, string[]> = new Map()
 
   override availablesSync(): string[] {
     return Array.from(this.dicts.keys())
@@ -75,15 +75,13 @@ class LocalDictSource extends DictSource {
   }
 
   loadDict(name: string, values: string[], depth = 0) {
-    this.dicts.set(name, { source: name, entries: values })
+    this.dicts.set(name, values)
     if (depth < this.config.logDepth)
       logger.info(`loaded dict ${name} with ${values.length} values.`)
   }
 
   override lookupSync(name: string): string[] {
-    if (this.dicts.has(name))
-      return this.dicts.get(name)!.entries
-    return []
+    return this.dicts.get(name) || []
   }
 }
 
