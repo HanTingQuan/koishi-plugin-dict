@@ -1,5 +1,5 @@
 import type { Context } from 'koishi'
-import { h, Random, Schema } from 'koishi'
+import { h, Schema } from 'koishi'
 
 export const inject = ['dict']
 
@@ -34,7 +34,7 @@ export function apply(ctx: Context, config: Config) {
     .option('delimiter', '-d <delim:string> 分隔符。')
     .action(async ({ options }) => {
       const delimiter = options?.delimiter || config.delimiter
-      return markdown((await ctx.dict.availables()).join(delimiter))
+      return markdown(Array.from(ctx.dict.availables).join(delimiter))
     })
 
   ctx.command('find <values...:string>', '查找查询字符串的词典。')
@@ -53,10 +53,13 @@ export function apply(ctx: Context, config: Config) {
     })
 
   function resolve(content: string) {
-    return content.replaceAll(/%\(([^()]*)\)/g, (raw, key) =>
-      Random.pick(ctx.dict.lookupSync(key) || [raw]))
+    return content.replaceAll(/%\(([^()]*)\)/g, (raw, key) => {
+      return `<execute>shuf $(look ${key})</execute>`
+    })
   }
 
-  config.echo && ctx.middleware((session, next) =>
-    next(() => session.content && resolve(session.content)), true)
+  config.echo && ctx.middleware((session, next) => next(() => {
+    if (session.content)
+      return h.parse(resolve(session.content))
+  }), true)
 }

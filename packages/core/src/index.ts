@@ -8,10 +8,15 @@ declare module 'koishi' {
   interface Context {
     dict: DictService
   }
+
+  interface Events {
+    'dict/loaded': (names: Iterable<string>) => void
+  }
 }
 
 class DictService extends Service {
   private sources: DictSource[] = []
+  readonly availables: Set<string> = new Set()
 
   constructor(ctx: Context, config: Command.Config) {
     super(ctx, 'dict', true)
@@ -25,20 +30,23 @@ class DictService extends Service {
     })
   }
 
-  availables() {
-    return Promise.all(this.sources.map(source => source.availables()))
-      .then(results => results.flat())
-  }
-
-  async lookup(key: string) {
-    return Promise.race(this.sources.map(source => source.lookup(key)))
+  lookup(key: string) {
+    return new Promise<string[]>((resolve) => {
+      let pendingCount = this.sources.length
+      for (const promise of this.sources.map(source => source.lookup(key))) {
+        promise.then((value) => {
+          if (value.length > 0)
+            resolve(value)
+          else if (--pendingCount === 0)
+            resolve([])
+        })
+      }
+    })
   }
 
   async find(...values: string[]): Promise<Record<string, Found[]>> {
     const founds = Object.fromEntries(values.map(value => [value, []]))
-    for (const source of this.sources) {
-      await source.find(values, founds)
-    }
+    await Promise.all(this.sources.map(source => source.find(values, founds)))
     return founds
   }
 }

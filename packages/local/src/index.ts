@@ -47,37 +47,37 @@ class LocalDictSource extends DictSource {
           }
         }
       })
-      .then(() => logger.info(`loaded ${this.dicts.size} dicts.`))
+      .then(() => {
+        logger.info(`loaded ${this.dicts.size} dicts.`)
+        for (const name of this.dicts.keys())
+          ctx.dict.availables.add(name)
+        ctx.emit('dict/loaded', this.dicts.keys())
+      })
   }
 
   dicts: Map<string, string[]> = new Map()
 
-  override availablesSync(): string[] {
-    return Array.from(this.dicts.keys())
-  }
-
-  tryLoadDict(name: string, data: any, depth = 0) {
+  tryLoadDict(name: string, data: any) {
     if (typeof data === 'string') {
       const lines = data.split('\n').filter(line => line.trim() !== '')
       const values = lines.length > 1 ? lines : Array.from(data)
-      this.loadDict(name, values, depth)
+      this.loadDict(name, values)
     }
     else if (Array.isArray(data) && data.every(item => typeof item === 'string')) {
-      this.loadDict(name, data, depth)
+      this.loadDict(name, data)
     }
     else if (typeof data === 'object' && data !== null) {
       for (const key in data)
-        this.tryLoadDict(`${name}/${key}`, data[key], depth + 1)
+        this.tryLoadDict(`${name}/${key}`, data[key])
     }
     else {
       logger.warn(`unknown dict format: ${name}`)
     }
   }
 
-  loadDict(name: string, values: string[], depth = 0) {
+  loadDict(name: string, values: string[]) {
     this.dicts.set(name, values)
-    if (depth < this.config.logDepth)
-      logger.info(`loaded dict ${name} with ${values.length} values.`)
+    logger.debug(`loaded dict ${name} with ${values.length} values.`)
   }
 
   override lookupSync(name: string): string[] {
@@ -86,15 +86,8 @@ class LocalDictSource extends DictSource {
 }
 
 namespace LocalDictSource {
-  export interface Config {
-    logDepth: number
-  }
-
-  export const Config: Schema<Config> = Schema.intersect([
-    Schema.object({
-      logDepth: Schema.number().step(1).default(1).description('日志深度。'),
-    }),
-  ])
+  export interface Config {}
+  export const Config: Schema<Config> = Schema.object({})
 }
 
 export default LocalDictSource

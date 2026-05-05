@@ -12,11 +12,6 @@ export abstract class DictSource {
     this.ctx.dict.register(this)
   }
 
-  availablesSync(): string[] { return [] }
-  async availables(): Promise<string[]> {
-    return this.availablesSync()
-  }
-
   // eslint-disable-next-line unused-imports/no-unused-vars
   lookupSync(name: string): string[] { return [] }
   async lookup(name: string): Promise<string[]> {
@@ -24,7 +19,7 @@ export abstract class DictSource {
   }
 
   async find(values: string[], founds: Record<string, Found[]>) {
-    for (const name of await this.availables()) {
+    for (const name of this.ctx.dict.availables) {
       const result = await this.lookup(name) || []
       const collected = result.join(' ')
       for (const value of values) {
