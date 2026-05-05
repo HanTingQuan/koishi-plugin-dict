@@ -20,14 +20,15 @@ export function apply(ctx: Context, config: Config) {
     return config.markdown ? h('markdown', content) : content
   }
 
-  ctx.command('look <key:string>', '查询词典所有结果。')
+  ctx.command('look <key...:string>', '查询词典所有结果。')
     .option('delimiter', '-d <delim:string> 分隔符。')
-    .action(async ({ options }, key) => {
+    .option('long', '-l 显示完整结果。')
+    .action(async ({ options }, ...key) => {
       const delimiter = options?.delimiter || config.delimiter
-      if (!key)
-        return (await ctx.dict.availables()).join(delimiter)
-      const result = await ctx.dict.lookup(key)
-      return result ? result.join(delimiter) : '未找到该词典。'
+      return (await Promise.all(key.map(key => ctx.dict.lookup(key))))
+        .map(result => result?.join(delimiter))
+        .map((joined, index) => options?.long ? `${key[index]}: ${joined}` : joined)
+        .join('\n')
     })
 
   ctx.command('find <values...:string>', '查找查询字符串的词典。')
