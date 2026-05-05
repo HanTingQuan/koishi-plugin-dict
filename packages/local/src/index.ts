@@ -59,18 +59,15 @@ class LocalDictSource extends DictSource {
   tryLoadDict(name: string, data: any, depth = 0) {
     if (typeof data === 'string') {
       const lines = data.split('\n').filter(line => line.trim() !== '')
-      if (lines.length > 1)
-        this.loadDict(name, lines, depth)
-      else
-        this.loadDict(name, Array.from(data), depth)
+      const values = lines.length > 1 ? lines : Array.from(data)
+      this.loadDict(name, values, depth)
     }
     else if (Array.isArray(data) && data.every(item => typeof item === 'string')) {
       this.loadDict(name, data, depth)
     }
     else if (typeof data === 'object' && data !== null) {
-      for (const key in data) {
+      for (const key in data)
         this.tryLoadDict(`${name}/${key}`, data[key], depth + 1)
-      }
     }
     else {
       logger.warn(`unknown dict format: ${name}`)
