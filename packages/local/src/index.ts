@@ -7,33 +7,23 @@ import { DictSource } from 'koishi-plugin-dict'
 
 const logger = new Logger('dict-local')
 
-class LocalDictSource extends DictSource {
-  constructor(ctx: Context, public config: LocalDictSource.Config) {
-    super(ctx)
+class LocalDictSource extends DictSource<LocalDictSource.Config> {
+  constructor(ctx: Context, config: LocalDictSource.Config) {
+    super(ctx, config)
     opendir(resolve(ctx.baseDir, 'data', 'dicts'))
       .then(async (entries) => {
         for await (const entry of entries) {
           if (!entry.isFile() || entry.name.startsWith('~'))
             continue
           const fullPath = resolve(entry.parentPath, entry.name)
-
-          if (entry.name.endsWith('.txt')) {
-            const name = entry.name.replace(/\.txt$/, '')
-            const content = await readFile(fullPath, 'utf-8')
-            this.loadDict(name, content
-              .replaceAll('\r\n', '\n')
-              .split('\n')
-              .map(line => line.trim())
-              .filter(Boolean))
-          }
-          else if (entry.name.endsWith('.json')) {
+          if (entry.name.endsWith('.json')) {
             const name = entry.name.replace(/\.json$/, '')
-            const content = await readFile(fullPath, 'utf-8')
+            const content = await readFile(fullPath, this.config.encoding)
             this.tryLoadDict(name, JSON.parse(content))
           }
           else if (entry.name.endsWith('.csv')) {
             const name = entry.name.replace(/\.csv$/, '')
-            const content = await readFile(fullPath, 'utf-8')
+            const content = await readFile(fullPath, this.config.encoding)
             const parser = parse(content, { columns: true })
             const typeToNames: Record<string, string[]> = {}
             parser.on('data', ({ name, type }) => {
@@ -84,8 +74,17 @@ class LocalDictSource extends DictSource {
 }
 
 namespace LocalDictSource {
-  export interface Config {}
-  export const Config: Schema<Config> = Schema.object({})
+  export interface Config {
+    encoding: 'ascii' | 'utf8' | 'utf16le'
+  }
+
+  export const Config: Schema<Config> = Schema.object({
+    encoding: Schema.union([
+      Schema.const('ascii').description('ASCII'),
+      Schema.const('utf8').description('UTF-8'),
+      Schema.const('utf16le').description('UTF-16LE'),
+    ]).default('utf8').description('文本文件编码。'),
+  })
 }
 
 export default LocalDictSource
