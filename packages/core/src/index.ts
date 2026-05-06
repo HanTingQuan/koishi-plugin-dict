@@ -1,8 +1,20 @@
 import type { DictSource, Found } from './source'
-import { Context, remove, Service } from 'koishi'
+import { Context, remove, Schema, Service } from 'koishi'
 import * as Command from './command'
 
 export * from './source'
+
+export interface Config {
+  echo: boolean
+  markdown: boolean
+  delimiter: string
+}
+
+export const Config = Schema.object({
+  echo: Schema.boolean().default(true).description('未捕获指令作为填字输出。'),
+  markdown: Schema.boolean().default(true).description('启用 Markdown 输出。'),
+  delimiter: Schema.string().default(' ').description('默认字段分隔符。'),
+})
 
 declare module 'koishi' {
   interface Context {
@@ -18,7 +30,7 @@ class DictService extends Service {
   private sources: DictSource[] = []
   readonly availables: Set<string> = new Set()
 
-  constructor(ctx: Context, config: Command.Config) {
+  constructor(ctx: Context, config: Config) {
     super(ctx, 'dict', true)
     this.config = config
     ctx.on('dict/register', (names) => {
@@ -55,7 +67,7 @@ class DictService extends Service {
   }
 }
 
-export function apply(ctx: Context, config: Command.Config) {
+export function apply(ctx: Context, config: Config) {
   ctx.plugin(DictService, config)
   ctx.plugin(Command, config)
 }
