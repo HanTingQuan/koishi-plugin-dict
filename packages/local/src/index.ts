@@ -48,10 +48,8 @@ class LocalDictSource extends DictSource {
         }
       })
       .then(() => {
+        ctx.emit('dict/register', this.dicts.keys())
         logger.info(`loaded ${this.dicts.size} dicts.`)
-        for (const name of this.dicts.keys())
-          ctx.dict.availables.add(name)
-        ctx.emit('dict/loaded', this.dicts.keys())
       })
   }
 

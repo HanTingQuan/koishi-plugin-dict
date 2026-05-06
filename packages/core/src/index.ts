@@ -10,7 +10,7 @@ declare module 'koishi' {
   }
 
   interface Events {
-    'dict/loaded': (names: Iterable<string>) => void
+    'dict/register': (names: Iterable<string>) => void
   }
 }
 
@@ -21,6 +21,10 @@ class DictService extends Service {
   constructor(ctx: Context, config: Command.Config) {
     super(ctx, 'dict', true)
     this.config = config
+    ctx.on('dict/register', (names) => {
+      for (const name of names)
+        this.availables.add(name)
+    })
   }
 
   register(source: DictSource) {
