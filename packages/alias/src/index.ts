@@ -12,8 +12,6 @@ class AliasDictSource extends DictSource {
         const shortcut = name.split('/').pop()!
         if (shortcut !== name) {
           this.aliases.set(shortcut, name)
-          this.ctx.dict.availables.delete(name)
-          this.ctx.dict.availables.add(shortcut)
           logger.debug(`${shortcut} -> ${name}`)
         }
       }
