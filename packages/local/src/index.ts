@@ -17,12 +17,12 @@ class LocalDictSource extends DictSource<LocalDictSource.Config> {
             continue
           const fullPath = resolve(entry.parentPath, entry.name)
           if (entry.name.endsWith('.json')) {
-            const name = entry.name.replace(/\.json$/, '')
+            const name = entry.name.slice(0, -5)
             const content = await readFile(fullPath, this.config.encoding)
             this.tryLoadDict(name, JSON.parse(content))
           }
           else if (entry.name.endsWith('.csv')) {
-            const name = entry.name.replace(/\.csv$/, '')
+            const name = entry.name.slice(0, -4)
             const content = await readFile(fullPath, this.config.encoding)
             const parser = parse(content, { columns: true })
             const typeToNames: Record<string, string[]> = {}
