@@ -26,20 +26,55 @@ class LocalDictSource extends DictSource {
             const content = await readFile(fullPath, this.config.encoding)
             const parser = parse(content, { columns: true })
             const typeToNames: Record<string, string[]> = {}
-            parser.on('data', ({ name, type }) => {
-              if (type && name)
-                (typeToNames[type] ||= []).push(name)
+            const tree: { level: number, children?: any[] } = { level: 0 }
+            const stack = [tree]
+            parser.on('data', (data: {
+              type?: string
+              name?: string
+              level?: string
+            }) => {
+              if (data.type && data.name)
+                (typeToNames[data.type] ||= []).push(data.name)
+              if (data.level) {
+                let last = stack[stack.length - 1]
+                const current = Object.assign(data, { level: Number(data.level) })
+                if (current.level > last.level) {
+                  (last.children ||= []).push(current)
+                }
+                else if (current.level === last.level) {
+                  stack.pop()
+                  last = stack[stack.length - 1]
+                  last.children!.push(current)
+                }
+                else {
+                  while (last.level >= current.level) {
+                    stack.pop()
+                    last = stack[stack.length - 1]
+                  }
+                  last.children!.push(current)
+                }
+                stack.push(current)
+              }
             })
+            const loadDict = this.loadDict.bind(this)
+            function loadNode(name: string, node: typeof tree) {
+              if (node.children) {
+                loadDict(name, node.children.map(child => child.name).filter(Boolean))
+                for (const child of node.children)
+                  child.name && loadNode(`${name}/${child.name}`, child)
+              }
+            }
             parser.on('end', () => {
               for (const type in typeToNames)
                 this.loadDict(`${name}/${type}`, typeToNames[type])
+              loadNode(name, tree)
             })
           }
         }
       })
       .then(() => {
-        ctx.emit('dict/register', this.dicts.keys())
         logger.info(`loaded ${this.dicts.size} dicts.`)
+        ctx.emit('dict/register', Array.from(this.dicts.keys()))
       })
   }
 

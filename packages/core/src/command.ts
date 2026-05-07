@@ -14,19 +14,15 @@ export function apply(ctx: Context, config: Config) {
     .option('long', '-l 显示完整结果。')
     .action(async ({ options }, ...key) => {
       const delimiter = options?.delimiter || config.delimiter
+      if (key.length === 0) {
+        return Array.from(ctx.dict.availables)
+          .map(name => options?.long ? name : name.split('/').pop())
+          .join(delimiter)
+      }
       return (await Promise.all(key.map(key => ctx.dict.lookup(key))))
         .map(result => result?.join(delimiter))
         .map((joined, index) => options?.long ? `${key[index]}: ${joined}` : joined)
         .join('\n')
-    })
-    .subcommand('.list', '列出所有词典。')
-    .option('delimiter', '-d <delim:string> 分隔符。')
-    .option('long', '-l 显示完整结果。')
-    .action(async ({ options }) => {
-      const delimiter = options?.delimiter || config.delimiter
-      return Array.from(ctx.dict.availables)
-        .map(name => options?.long ? name : name.split('/').pop())
-        .join(delimiter)
     })
 
   ctx.command('find <values...:string>', '查找查询字符串的词典。')

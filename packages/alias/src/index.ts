@@ -11,7 +11,10 @@ class AliasDictSource extends DictSource {
       for (const name of names) {
         const shortcut = name.split('/').pop()!
         if (shortcut !== name) {
-          this.aliases.set(shortcut, name)
+          if (this.aliases.has(shortcut))
+            this.aliases.get(shortcut)!.push(name)
+          else
+            this.aliases.set(shortcut, [name])
           logger.debug(`${shortcut} -> ${name}`)
         }
       }
@@ -19,12 +22,15 @@ class AliasDictSource extends DictSource {
     })
   }
 
-  aliases: Map<string, string> = new Map()
+  aliases: Map<string, string[]> = new Map()
 
   override lookup(key: string) {
-    if (!this.aliases.has(key))
+    const names = this.aliases.get(key) || []
+    if (names.length === 0)
       return Promise.resolve([])
-    return this.ctx.dict.lookup(this.aliases.get(key)!)
+    if (names.length === 1)
+      return this.ctx.dict.lookup(names[0])
+    return Promise.resolve(names)
   }
 }
 
