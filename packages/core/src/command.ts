@@ -12,7 +12,7 @@ export function apply(ctx: Context, config: Config) {
   ctx.command('look <keys...:string>', '查询词典所有结果。')
     .option('delimiter', '-d <delim:string> 分隔符。')
     .option('long', '-l 显示完整结果。')
-    .action(async ({ options }, ...keys) => {
+    .action(async ({ session, options }, ...keys) => {
       const delimiter = options?.delimiter || config.delimiter
       if (keys.length === 0) {
         return Array.from(ctx.dict.availables)
@@ -20,7 +20,11 @@ export function apply(ctx: Context, config: Config) {
           .join(delimiter)
       }
       return (await Promise.all(keys.map(key => ctx.dict.lookup(key))))
-        .map(result => result?.join(delimiter))
+        .map((result) => {
+          if (result.extra)
+            session?.send(markdown(result.extra))
+          return result?.join(delimiter)
+        })
         .map((joined, index) => joined
           ? options?.long ? `${keys[index]}: ${joined}` : joined
           : keys[index],

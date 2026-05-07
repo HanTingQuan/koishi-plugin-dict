@@ -47,7 +47,7 @@ class DictService extends Service {
   }
 
   lookup(key: string) {
-    return new Promise<string[]>((resolve) => {
+    return new Promise<string[] & { extra?: any }>((resolve) => {
       let pendingCount = this.sources.length
       for (const promise of this.sources.map(source => source.lookup(key))) {
         promise.then((value) => {

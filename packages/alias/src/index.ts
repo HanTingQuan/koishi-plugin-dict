@@ -30,7 +30,9 @@ class AliasDictSource extends DictSource {
       return Promise.resolve([])
     if (names.length === 1)
       return this.ctx.dict.lookup(names[0])
-    return Promise.resolve(names)
+    return Promise.resolve(Object.assign(names, {
+      extra: `冲突别名！${key} -> ${names.join(' ')}`,
+    }))
   }
 }
 
