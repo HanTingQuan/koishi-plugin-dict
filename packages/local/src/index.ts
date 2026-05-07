@@ -1,7 +1,6 @@
 import type { Context } from 'koishi'
 import { opendir, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { parse } from 'csv-parse'
 import { Logger, Schema } from 'koishi'
 import { DictSource } from 'koishi-plugin-dict'
 
@@ -20,55 +19,6 @@ class LocalDictSource extends DictSource {
             const name = entry.name.slice(0, -5)
             const content = await readFile(fullPath, this.config.encoding)
             this.tryLoadDict(name, JSON.parse(content))
-          }
-          else if (entry.name.endsWith('.csv')) {
-            const name = entry.name.slice(0, -4)
-            const content = await readFile(fullPath, this.config.encoding)
-            const parser = parse(content, { columns: true })
-            const typeToNames: Record<string, string[]> = {}
-            const tree: { level: number, children?: any[] } = { level: 0 }
-            const stack = [tree]
-            parser.on('data', (data: {
-              type?: string
-              name?: string
-              level?: string
-            }) => {
-              if (data.type && data.name)
-                (typeToNames[data.type] ||= []).push(data.name)
-              if (data.level) {
-                let last = stack[stack.length - 1]
-                const current = Object.assign(data, { level: Number(data.level) })
-                if (current.level > last.level) {
-                  (last.children ||= []).push(current)
-                }
-                else if (current.level === last.level) {
-                  stack.pop()
-                  last = stack[stack.length - 1]
-                  last.children!.push(current)
-                }
-                else {
-                  while (last.level >= current.level) {
-                    stack.pop()
-                    last = stack[stack.length - 1]
-                  }
-                  last.children!.push(current)
-                }
-                stack.push(current)
-              }
-            })
-            const loadDict = this.loadDict.bind(this)
-            function loadNode(name: string, node: typeof tree) {
-              if (node.children) {
-                loadDict(name, node.children.map(child => child.name).filter(Boolean))
-                for (const child of node.children)
-                  child.name && loadNode(`${name}/${child.name}`, child)
-              }
-            }
-            parser.on('end', () => {
-              for (const type in typeToNames)
-                this.loadDict(`${name}/${type}`, typeToNames[type])
-              loadNode(name, tree)
-            })
           }
         }
       })
@@ -90,7 +40,9 @@ class LocalDictSource extends DictSource {
       this.loadDict(name, data)
     }
     else if (typeof data === 'object' && data !== null) {
-      for (const key in data)
+      const keys = Object.keys(data)
+      keys.length && this.loadDict(name, keys)
+      for (const key of keys)
         this.tryLoadDict(`${name}/${key}`, data[key])
     }
     else {
