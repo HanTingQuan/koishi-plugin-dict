@@ -24,7 +24,7 @@ export function apply(ctx: Context, config: Config) {
         if (!result.length)
           return keys[index]
         if (result.extra)
-          await session?.send(markdown(result.extra))
+          await session?.send(result.extra)
         const joined = result?.join(delimiter)
         return options?.long ? `${keys[index]}: ${joined}` : joined
       }))).join('\n')
@@ -45,16 +45,9 @@ export function apply(ctx: Context, config: Config) {
         .join('\n'))
     })
 
-  function resolve(content: string) {
-    return content.replaceAll(/%\(([^()]*)\)/g, (raw, key) => {
-      return `<execute>shuf $(look ${key})</execute>`
-    })
-  }
-
-  config.echo && ctx.middleware((session, next) => {
-    if (!session.content)
-      return next()
-    const content = resolve(session.content)
-    return next(() => h.parse(content))
-  }, true)
+  config.echo && ctx.middleware((session, next) =>
+    next(() => session.content && h.parse(session.content
+      .replaceAll(/%\(([^()]*)\)/g, (_, key) => {
+        return `<execute>shuf $(look ${key})</execute>`
+      }))), true)
 }

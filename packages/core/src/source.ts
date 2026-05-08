@@ -14,7 +14,7 @@ export abstract class DictSource {
 
   // eslint-disable-next-line unused-imports/no-unused-vars
   lookupSync(name: string): string[] { return [] }
-  async lookup(name: string): Promise<string[] & { extra?: any }> {
+  async lookup(name: string): Promise<string[] & { extra?: string }> {
     return this.lookupSync(name)
   }
 
