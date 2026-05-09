@@ -7,6 +7,7 @@ export const inject = ['dict']
 export function apply(ctx: Context, config: Config) {
   ctx.command('look <keys...:string>', '查询词典所有结果。')
     .option('long', '-l 显示完整结果。')
+    .option('prefixed', '-p 添加字典前缀。')
     .action(async ({ session, options }, ...keys) => {
       if (keys.length === 0) {
         return Array.from(ctx.dict.availables)
@@ -19,7 +20,9 @@ export function apply(ctx: Context, config: Config) {
           return keys[index]
         if (result.extra)
           await session?.send(result.extra)
-        const joined = result?.join(' ')
+        const joined = options?.prefixed
+          ? result.map(item => `${key}/${item}`).join(' ')
+          : result.join(' ')
         return options?.long ? `${keys[index]}: ${joined}` : joined
       }))).join('\n')
     })
