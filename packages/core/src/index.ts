@@ -6,14 +6,10 @@ export * from './source'
 
 export interface Config {
   echo: boolean
-  markdown: boolean
-  delimiter: string
 }
 
 export const Config = Schema.object({
   echo: Schema.boolean().default(true).description('未捕获指令作为填字输出。'),
-  markdown: Schema.boolean().default(true).description('启用 Markdown 输出。'),
-  delimiter: Schema.string().default(' ').description('默认字段分隔符。'),
 })
 
 declare module 'koishi' {
