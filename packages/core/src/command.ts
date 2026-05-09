@@ -46,8 +46,10 @@ export function apply(ctx: Context, config: Config) {
     })
 
   config.echo && ctx.middleware((session, next) =>
-    next(() => session.content && h.parse(session.content
-      .replaceAll(/%\(([^()]*)\)/g, (_, key) => {
-        return `<execute>shuf $(look ${key})</execute>`
-      }))), true)
+    void next(() => session.content && h('markdown', h.parse(
+      h.escape(session.content)
+        .replaceAll(/%\(([^()]*)\)/g, (_, key) => {
+          return `<execute>shuf $(look ${key})</execute>`
+        }),
+    ))))
 }
