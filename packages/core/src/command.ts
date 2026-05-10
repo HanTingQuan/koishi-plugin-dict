@@ -4,7 +4,7 @@ import { Argv, h, Random } from 'koishi'
 export const inject = ['dict']
 
 export function apply(ctx: Context) {
-  const look = ctx.command('look <keys...:string>', '查询词典所有结果。')
+  const look = ctx.command('look <...keys:string>', '查询词典所有结果。')
     .option('long', '-l 显示字典名。')
     .option('prefixed', '-p 添加字典前缀。')
     .option('count', '-n <count:number> ')
@@ -32,7 +32,7 @@ export function apply(ctx: Context) {
       }))).join('\n')
     })
 
-  ctx.command('find <values...:string>', '查找查询字符串的词典。')
+  ctx.command('find <...values:string>', '查找查询字符串的词典。')
     .option('markdown', '-m 启用 markdown 输出。')
     .action(async ({ options }, ...values) => {
       const result = Object.entries(await ctx.dict.find(...values))
