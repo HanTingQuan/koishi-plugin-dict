@@ -26,33 +26,38 @@ class CustomDictSource extends DictSource {
       values: 'list',
     }, { primary: 'name' })
 
-    opendir(resolve(ctx.baseDir, 'data', 'dicts'))
-      .then(async (entries) => {
-        const promises = []
-        for await (const entry of entries) {
-          if (!entry.isFile() || entry.name.startsWith('~'))
-            continue
-          const fullPath = resolve(entry.parentPath, entry.name)
-          if (entry.name.endsWith('.txt')) {
-            const name = entry.name.replace(/\.txt$/, '')
-            const content = await readFile(fullPath, config.encoding)
-            const values = content.split('\n')
-              .map(line => line.trim())
-              .filter(line => line !== '')
-            promises.push(ctx.database.upsert('dict', [{ name, values }]))
-          }
-        }
-        return Promise.all(promises)
-      })
-      .then(() => {
-        ctx.database.get('dict', {}, ['name'])
-          .then((names) => {
-            for (const { name } of names)
-              this.dicts.add(name)
-            logger.info(`indexed ${this.dicts.size} dicts.`)
-            ctx.emit('dict-added', ...Array.from(this.dicts.values()))
-          })
-      })
+    ;(async () => {
+      if (this.config.sync) {
+        await this.sync()
+        this.config.sync = false
+        ctx.scope.update(config)
+      }
+
+      const dicts = await ctx.database.get('dict', {}, ['name'])
+      for (const { name } of dicts)
+        this.dicts.add(name)
+      logger.info(`indexed ${this.dicts.size} dicts.`)
+      ctx.emit('dict-added', ...Array.from(this.dicts.values()))
+    })()
+  }
+
+  async sync() {
+    const entries = await opendir(resolve(this.ctx.baseDir, 'data', 'dicts'))
+    const promises = []
+    for await (const entry of entries) {
+      if (!entry.isFile() || entry.name.startsWith('~'))
+        continue
+      const fullPath = resolve(entry.parentPath, entry.name)
+      if (entry.name.endsWith('.txt')) {
+        const name = entry.name.replace(/\.txt$/, '')
+        const content = await readFile(fullPath, this.config.encoding)
+        const values = content.split('\n')
+          .map(line => line.trim())
+          .filter(line => line !== '')
+        promises.push(this.ctx.database.upsert('dict', [{ name, values }]))
+      }
+    }
+    await Promise.all(promises)
   }
 
   dicts: Set<string> = new Set()
@@ -67,10 +72,12 @@ class CustomDictSource extends DictSource {
 
 namespace CustomDictSource {
   export interface Config {
+    sync: boolean
     encoding: 'ascii' | 'utf8' | 'utf16le'
   }
 
   export const Config: Schema<Config> = Schema.object({
+    sync: Schema.boolean().default(false).description('同步文件系统。'),
     encoding: Schema.union([
       Schema.const('ascii').description('ASCII'),
       Schema.const('utf8').description('UTF-8'),
