@@ -1,28 +1,48 @@
 import type { Context } from 'koishi'
-import { Logger, Schema } from 'koishi'
+import { Logger, remove, Schema } from 'koishi'
 import { DictSource } from 'koishi-plugin-dict'
 
 const logger = new Logger('dict-alias')
 
 class AliasDictSource extends DictSource {
+  * suffixes(name: string) {
+    const path = name.split(this.ctx.dict.separator)
+    let suffix = path.pop()!
+    while (suffix !== name) {
+      yield suffix
+      suffix = `${path.pop()}${this.ctx.dict.separator}${suffix}`
+    }
+  }
+
   constructor(ctx: Context, public config: AliasDictSource.Config) {
     super(ctx)
+
     ctx.on('dict-added', (...names) => {
       const before = this.aliases.size
       for (const name of names) {
-        const path = name.split(ctx.dict.separator)
-        let suffix = path.pop()!
-        while (suffix !== name) {
+        for (const suffix of this.suffixes(name)) {
           if (this.aliases.has(suffix))
             this.aliases.get(suffix)!.push(name)
           else
             this.aliases.set(suffix, [name])
-          logger.debug(`${suffix} -> ${name}`)
-          suffix = `${path.pop()}${ctx.dict.separator}${suffix}`
+          logger.debug(`added: ${suffix} -> ${name}`)
         }
       }
       const diff = this.aliases.size - before
       diff && logger.info(`resolved ${diff} more aliases, ${this.aliases.size} in total.`)
+    })
+
+    ctx.on('dict-removed', (...names) => {
+      const before = this.aliases.size
+      for (const name of names) {
+        for (const suffix of this.suffixes(name)) {
+          const names = this.aliases.get(suffix)
+          names ? remove(names, name) : logger.warn(`alias ${suffix} not found`)
+          logger.debug(`removed: ${suffix} -> ${name}`)
+        }
+      }
+      const diff = this.aliases.size - before
+      diff && logger.info(`removed ${diff} aliases, ${this.aliases.size} left.`)
     })
   }
 

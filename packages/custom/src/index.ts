@@ -26,7 +26,7 @@ class CustomDictSource extends DictSource {
       values: 'list',
     }, { primary: 'name' })
 
-    ;(async () => {
+    ctx.on('ready', async () => {
       if (this.config.sync) {
         await this.sync()
         this.config.sync = false
@@ -37,8 +37,12 @@ class CustomDictSource extends DictSource {
       for (const { name } of dicts)
         this.dicts.add(name)
       logger.info(`indexed ${this.dicts.size} dicts.`)
-      ctx.emit('dict-added', ...Array.from(this.dicts.values()))
-    })()
+      ctx.emit('dict-added', ...this.dicts.values())
+    })
+
+    ctx.on('dispose', () => {
+      ctx.emit('dict-removed', ...this.dicts.values())
+    })
   }
 
   async sync() {

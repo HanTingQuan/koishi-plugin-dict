@@ -9,23 +9,26 @@ const logger = new Logger('dict-local')
 class LocalDictSource extends DictSource {
   constructor(ctx: Context, public config: LocalDictSource.Config) {
     super(ctx)
-    opendir(resolve(ctx.baseDir, 'data', 'dicts'))
-      .then(async (entries) => {
-        for await (const entry of entries) {
-          if (!entry.isFile() || entry.name.startsWith('~'))
-            continue
-          const fullPath = resolve(entry.parentPath, entry.name)
-          if (entry.name.endsWith('.json')) {
-            const name = entry.name.slice(0, -5)
-            const content = await readFile(fullPath, this.config.encoding)
-            this.tryLoadDict(name, JSON.parse(content))
-          }
+
+    ctx.on('ready', async () => {
+      const entries = await opendir(resolve(ctx.baseDir, 'data', 'dicts'))
+      for await (const entry of entries) {
+        if (!entry.isFile() || entry.name.startsWith('~'))
+          continue
+        const fullPath = resolve(entry.parentPath, entry.name)
+        if (entry.name.endsWith('.json')) {
+          const name = entry.name.slice(0, -5)
+          const content = await readFile(fullPath, this.config.encoding)
+          this.tryLoadDict(name, JSON.parse(content))
         }
-      })
-      .then(() => {
-        logger.info(`loaded ${this.dicts.size} dicts.`)
-        ctx.emit('dict-added', ...Array.from(this.dicts.keys()))
-      })
+      }
+      logger.info(`loaded ${this.dicts.size} dicts.`)
+      ctx.emit('dict-added', ...this.dicts.keys())
+    })
+
+    ctx.on('dispose', () => {
+      ctx.emit('dict-removed', ...this.dicts.keys())
+    })
   }
 
   dicts: Map<string, string[]> = new Map()

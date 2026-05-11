@@ -19,6 +19,7 @@ declare module 'koishi' {
 
   interface Events {
     'dict-added': (...names: string[]) => void
+    'dict-removed': (...names: string[]) => void
   }
 }
 
@@ -33,6 +34,10 @@ class DictService extends Service {
     ctx.on('dict-added', (...names) => {
       for (const name of names)
         this.availables.add(name)
+    })
+    ctx.on('dict-removed', (...names) => {
+      for (const name of names)
+        this.availables.delete(name)
     })
   }
 
