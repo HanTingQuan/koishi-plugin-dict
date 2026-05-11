@@ -49,18 +49,20 @@ class CustomDictSource extends DictSource {
           if (!options.force)
             return `如要移除字典 %(${name})，请使用 --force 选项。`
 
-          await ctx.database.remove('dict', { name })
+          this.availables.delete(name)
+          this.ctx.emit('dict-removed', name)
+          await this.ctx.database.remove('dict', { name })
           return `已成功移除字典 %(${name})。`
         }
 
-        if (!this.availables.has(name)) {
-          if (options?.remove)
-            return `字典 %(${name}) 不存在。`
-          await ctx.database.upsert('dict', [{ name, values: [] }])
-          this.availables.add(name)
-        }
+        let dict = { name, values: [] as string[] }
 
-        const [dict] = await ctx.database.get('dict', { name })
+        if (this.availables.has(name)) {
+          [dict] = await ctx.database.get('dict', { name })
+        }
+        else if (options?.remove) {
+          return `字典 %(${name}) 不存在。`
+        }
 
         const success: string[] = []
         const failed: string[] = []
@@ -89,7 +91,6 @@ class CustomDictSource extends DictSource {
         }
         else {
           if (success.length === 0) {
-            await ctx.database.remove('dict', { name })
             return `添加失败：所有值都已存在，您可以使用 --force 选项强制添加。`
           }
           dict.values.push(...success)
@@ -98,7 +99,11 @@ class CustomDictSource extends DictSource {
             await session.send(`添加失败，以下值已存在：${failed.join(' ')}`)
         }
 
-        await ctx.database.upsert('dict', [dict])
+        await this.ctx.database.upsert('dict', [{ name, values }])
+        if (!this.availables.has(name)) {
+          this.availables.add(name)
+          this.ctx.emit('dict-added', name)
+        }
       })
 
     ctx.on('ready', async () => {
