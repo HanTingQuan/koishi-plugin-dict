@@ -21,7 +21,7 @@ class HongziDictSource extends DictSource {
       ctx.emit('dict-removed', ...this.availables)
     })
 
-    ctx.command('tianzi <message:text>', '薨机的填字。')
+    ctx.command('hongzi <message:text>', '薨机的填字。')
       .action(async (_, message) => {
         if (!message.includes('[[') || !message.includes(']]'))
           return message
