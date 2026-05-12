@@ -31,7 +31,8 @@ export function apply(ctx: Context) {
         return options?.long ? `${keys[index]}: ${joined}` : joined
       }))).join('\n')
     })
-    .subcommand('.list [prefix:string]', '显示所有词典。')
+
+  look.subcommand('.list [prefix:string]', '显示所有词典。')
     .option('long', '-l 显示字典全名。')
     .option('depth', '-d <depth:number> 字典深度。')
     .action(async ({ options }, prefix = '') => {
