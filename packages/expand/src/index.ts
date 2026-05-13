@@ -12,9 +12,9 @@ class ExpandDictSource extends DictSource {
   async lookupRecursive(parent: string): Promise<string[]> {
     const children = await this.ctx.dict.lookup(parent)
     if (!children.length)
-      return [parent.split(this.ctx.dict.separator).pop()!]
+      return [this.ctx.dict.split(parent).pop()!]
     const results = await Promise.all(children.map(child =>
-      this.lookupRecursive(`${parent}${this.ctx.dict.separator}${child}`)))
+      this.lookupRecursive(this.ctx.dict.join(parent, child))))
     return results.flat()
   }
 

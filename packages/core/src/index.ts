@@ -27,11 +27,21 @@ export default class DictService extends Service {
 
   private sources: DictSource[] = []
   readonly availables: Set<string> = new Set()
-  readonly separator: string
 
-  constructor(ctx: Context, config: Config) {
+  get sep() {
+    return this.config.separator
+  }
+
+  join(...names: string[]) {
+    return names.join(this.sep)
+  }
+
+  split(name: string) {
+    return name.split(this.sep)
+  }
+
+  constructor(ctx: Context, public config: Config) {
     super(ctx, 'dict', true)
-    this.separator = config.separator
     ctx.on('dict-added', (...names) => {
       for (const name of names)
         this.availables.add(name)

@@ -8,11 +8,11 @@ class AliasDictSource extends DictSource {
   static name = 'dict-alias';
 
   * suffixes(name: string) {
-    const path = name.split(this.ctx.dict.separator)
+    const path = this.ctx.dict.split(name)
     let suffix = path.pop()!
     while (suffix !== name) {
       yield suffix
-      suffix = `${path.pop()}${this.ctx.dict.separator}${suffix}`
+      suffix = this.ctx.dict.join(path.pop()!, suffix)
     }
   }
 

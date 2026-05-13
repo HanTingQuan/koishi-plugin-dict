@@ -80,12 +80,14 @@ class LocalDictSource extends DictSource {
     }
     else if (typeof data === 'object' && data !== null) {
       if (typeof data.name === 'string') {
-        if (typeof data.type === 'string')
-          await this.pushDict(`${name.split(this.ctx.dict.separator)[0]}#${data.type}`, data.name)
+        if (typeof data.type === 'string') {
+          const filename = this.ctx.dict.split(name)[0]
+          await this.pushDict(`${filename}#${data.type}`, data.name)
+        }
         await this.pushDict(name, data.name)
         if (Array.isArray(data.children)) {
           for (const child of data.children) {
-            await this.tryLoadDict(`${name}${this.ctx.dict.separator}${data.name}`, child)
+            await this.tryLoadDict(this.ctx.dict.join(name, data.name), child)
           }
         }
         return
@@ -94,7 +96,7 @@ class LocalDictSource extends DictSource {
       const keys = Object.keys(data)
       keys.length && await this.loadDict(name, keys)
       for (const key of keys)
-        await this.tryLoadDict(`${name}${this.ctx.dict.separator}${key}`, data[key])
+        await this.tryLoadDict(this.ctx.dict.join(name, key), data[key])
     }
     else {
       logger.warn(`unknown dict format: ${name}`)
