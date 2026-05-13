@@ -81,8 +81,12 @@ class LocalDictSource extends DictSource {
     else if (typeof data === 'object' && data !== null) {
       if (typeof data.name === 'string') {
         if (typeof data.type === 'string') {
-          const filename = this.ctx.dict.split(name)[0]
-          await this.pushDict(`${filename}#${data.type}`, data.name)
+          const path = this.ctx.dict.split(name)
+          while (path.length) {
+            const prefix = path.join(this.ctx.dict.sep)
+            await this.pushDict(`${prefix}#${data.type}`, data.name)
+            path.pop()
+          }
         }
         await this.pushDict(name, data.name)
         if (Array.isArray(data.children)) {
@@ -113,7 +117,7 @@ class LocalDictSource extends DictSource {
     const values = dict[0]?.values || []
     values.push(...items)
     await this.ctx.database.upsert('dict', [{ name, values }])
-    logger.debug(`pushed ${items.length} values to dict ${name}.`)
+    logger.info(`pushed ${items} to dict ${name}.`)
   }
 
   override async lookup(name: string): Promise<string[]> {
