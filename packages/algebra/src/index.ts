@@ -14,21 +14,29 @@ class AlgebraDictSource extends DictSource {
     '^': (lhs, rhs) => lhs.filter(item => !rhs.includes(item)),
   }
 
-  override async lookup(key: string) {
-    for (const operator of Object.keys(this.binaryOperators)) {
-      if (key.includes(operator)) {
-        const [lhs, rhs] = key.split(operator, 2)
-        logger.debug(`lookup ${key} -> ${lhs} ${operator} ${rhs}`)
-        return this.binaryOperators[operator](
-          ...await Promise.all([
-            this.ctx.dict.lookup(lhs),
-            this.ctx.dict.lookup(rhs),
-          ]),
-        )
+  caches: Map<string, string[]> = new Map()
+
+  cache(name: string, values: string[]) {
+    this.caches.set(name, values)
+    return values
+  }
+
+  override async lookup(name: string) {
+    if (this.caches.has(name))
+      return this.caches.get(name)!
+    for (const [operator, resolve] of Object.entries(this.binaryOperators)) {
+      if (name.includes(operator)) {
+        const [lhs, rhs] = name.split(operator, 2)
+        logger.debug(`lookup ${name} -> ${lhs} ${operator} ${rhs}`)
+        const [lhsValues, rhsValues] = await Promise.all([
+          this.ctx.dict.lookup(lhs),
+          this.ctx.dict.lookup(rhs),
+        ])
+        return this.cache(name, resolve(lhsValues, rhsValues))
       }
     }
-    if (key.startsWith('...'))
-      return this.lookupRecursive(key.slice(3))
+    if (name.startsWith('...'))
+      return await this.lookupRecursive(name.slice(3))
     return []
   }
 
@@ -38,7 +46,7 @@ class AlgebraDictSource extends DictSource {
       return [this.ctx.dict.split(parent).pop()!]
     const results = await Promise.all(children.map(child =>
       this.lookupRecursive(this.ctx.dict.join(parent, child))))
-    return results.flat()
+    return this.cache(parent, results.flat())
   }
 }
 
