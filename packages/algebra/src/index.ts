@@ -46,7 +46,7 @@ class AlgebraDictSource extends DictSource {
       return [this.ctx.dict.split(parent).pop()!]
     const results = await Promise.all(children.map(child =>
       this.lookupRecursive(this.ctx.dict.join(parent, child))))
-    return this.cache(parent, results.flat())
+    return this.cache(`...${parent}`, results.flat())
   }
 }
 
