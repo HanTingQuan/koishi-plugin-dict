@@ -3,6 +3,8 @@ import { Schema } from 'koishi'
 import { DictSource } from 'koishi-plugin-dict'
 
 class ExpandDictSource extends DictSource {
+  static name = 'dict-expand'
+
   constructor(ctx: Context, public config: ExpandDictSource.Config) {
     super(ctx)
   }

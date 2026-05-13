@@ -4,6 +4,8 @@ import { DictSource } from 'koishi-plugin-dict'
 const logger = new Logger('dict-algebra')
 
 class AlgebraDictSource extends DictSource {
+  static name = 'dict-algebra'
+
   binaryOperators: Record<string, (lhs: string[], rhs: string[]) => string[]> = {
     '-': (lhs, rhs) => lhs.filter(item => !rhs.includes(item)),
     '+': (lhs, rhs) => lhs.concat(rhs),

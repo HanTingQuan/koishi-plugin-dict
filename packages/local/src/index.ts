@@ -7,6 +7,8 @@ import { DictSource } from 'koishi-plugin-dict'
 const logger = new Logger('dict-local')
 
 class LocalDictSource extends DictSource {
+  static name = 'dict-local'
+
   constructor(ctx: Context, public config: LocalDictSource.Config) {
     super(ctx)
 

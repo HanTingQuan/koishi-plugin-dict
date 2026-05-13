@@ -5,6 +5,8 @@ import { DictSource } from 'koishi-plugin-dict'
 const logger = new Logger('dict-alias')
 
 class AliasDictSource extends DictSource {
+  static name = 'dict-alias';
+
   * suffixes(name: string) {
     const path = name.split(this.ctx.dict.separator)
     let suffix = path.pop()!

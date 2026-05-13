@@ -4,6 +4,8 @@ import { resolve } from 'node:path'
 import { Logger, Schema } from 'koishi'
 import { DictSource } from 'koishi-plugin-dict'
 
+const logger = new Logger('dict-custom')
+
 declare module 'koishi' {
   interface Tables {
     dict: {
@@ -15,7 +17,6 @@ declare module 'koishi' {
 
 class CustomDictSource extends DictSource {
   static name = 'dict-custom'
-  logger = new Logger('dict-custom')
   static inject = ['dict', 'database']
 
   availables: Set<string> = new Set()
@@ -110,7 +111,7 @@ class CustomDictSource extends DictSource {
       const dicts = await ctx.database.get('dict', {}, ['name'])
       for (const { name } of dicts)
         this.availables.add(name)
-      this.logger.info(`indexed ${this.availables.size} dicts.`)
+      logger.info(`indexed ${this.availables.size} dicts.`)
       ctx.emit('dict-added', ...this.availables.values())
     })
 

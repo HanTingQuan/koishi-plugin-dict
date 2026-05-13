@@ -23,6 +23,8 @@ declare module 'koishi' {
 }
 
 export default class DictService extends Service {
+  static name = 'dict'
+
   private sources: DictSource[] = []
   readonly availables: Set<string> = new Set()
   readonly separator: string
