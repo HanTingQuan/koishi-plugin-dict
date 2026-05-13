@@ -1,7 +1,7 @@
 import type { Context } from 'koishi'
 import type { Found } from 'koishi-plugin-dict'
 import {} from '@koishijs/plugin-help'
-import { h, Logger, Schema } from 'koishi'
+import { Argv, h, Logger, Schema } from 'koishi'
 import { DictSource } from 'koishi-plugin-dict'
 
 const logger = new Logger('dict-hongzi')
@@ -24,7 +24,7 @@ class HongziDictSource extends DictSource {
       ctx.emit('dict-removed', ...this.availables)
     })
 
-    ctx.command('hongzi <message:text>', '薨机的填字。')
+    const hongzi = ctx.command('hongzi <message:text>', '薨机的填字。')
       .option('debug', '-d 显示调用栈。')
       .action(async ({ session, options }, message) => {
         if (!message.includes('[[') || !message.includes(']]'))
@@ -40,6 +40,31 @@ class HongziDictSource extends DictSource {
           session?.send(callstack)
         return h.text(translated)
       })
+
+    Argv.interpolate('[[', ']]', (raw) => {
+      const source = h.unescape(raw)
+      let index = 0
+      for (let depth = 1; index < source.length; index++) {
+        const current = source[index]
+        if (current === '[[')
+          depth++
+        else if (current === ']]' && --depth === 0)
+          break
+      }
+      const result = source.slice(0, index - 2)
+      if (!result) {
+        const index = raw.indexOf(']]')
+        if (index >= 0)
+          return { source: raw, rest: raw.slice(index + 2), tokens: [] }
+        return { source: raw, rest: '', tokens: [] }
+      }
+      return {
+        source: result,
+        command: hongzi,
+        args: [result],
+        rest: h.escape(source.slice(result.length + 2)),
+      }
+    })
   }
 
   override async lookup(name: string): Promise<string[]> {
