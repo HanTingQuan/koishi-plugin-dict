@@ -50,7 +50,7 @@ export function apply(ctx: Context) {
         .map(([key, founds]) => `${key}: ${founds
           .sort((a, b) => +a.weak - +b.weak)
           .map(found => found.weak
-            ? options?.markdown ? `*${found.name}*` : `(${found.name})`
+            ? options?.markdown ? `*${found.name}*` : found.name
             : found.name,
           )
           .join(' ')}`)
