@@ -28,10 +28,8 @@ class AlgebraDictSource extends DictSource {
       if (name.includes(operator)) {
         const [lhs, rhs] = name.split(operator, 2)
         logger.debug(`lookup ${name} -> ${lhs} ${operator} ${rhs}`)
-        const [lhsValues, rhsValues] = await Promise.all([
-          this.ctx.dict.lookup(lhs),
-          this.ctx.dict.lookup(rhs),
-        ])
+        const [lhsValues, rhsValues] = await Promise
+          .all([this.ctx.dict.lookup(lhs), this.ctx.dict.lookup(rhs)])
         return this.cache(name, resolve(lhsValues, rhsValues))
       }
     }
