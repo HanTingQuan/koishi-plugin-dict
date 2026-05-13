@@ -27,7 +27,18 @@ class AlgebraDictSource extends DictSource {
         )
       }
     }
+    if (key.startsWith('...'))
+      return this.lookupRecursive(key.slice(3))
     return []
+  }
+
+  async lookupRecursive(parent: string): Promise<string[]> {
+    const children = await this.ctx.dict.lookup(parent)
+    if (!children.length)
+      return [this.ctx.dict.split(parent).pop()!]
+    const results = await Promise.all(children.map(child =>
+      this.lookupRecursive(this.ctx.dict.join(parent, child))))
+    return results.flat()
   }
 }
 
