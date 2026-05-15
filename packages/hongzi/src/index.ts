@@ -41,8 +41,9 @@ class HongziDictSource extends DictSource {
 
     ctx.middleware(async (session, next) => {
       if (session.content?.includes('[[') && session.content.includes(']]')) {
-        const { translated } = await this.translate(session.content)
-        session.content = translated
+        const unescaped = h.unescape(session.content)
+        const { translated } = await this.translate(unescaped)
+        session.content = h.escape(translated)
       }
       return next()
     }, true)
